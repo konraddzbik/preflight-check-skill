@@ -19,10 +19,10 @@ from core.detectors.validators import (
 
 class TestPesel:
     @pytest.mark.parametrize("value", [
-        "44051401359",   # 1944 birth
-        "02070803628",   # 2002 birth (month offset 20)
-        "00410100000",   # 2100 birth (month offset 40)
-        "85010100005",   # 1985 birth
+        "99123175313",   # 1999-12-31, serial 7531 (synthetic)
+        "05312248267",   # 2005-11-22, month offset 20 (synthetic)
+        "00410100000",   # 2100 birth, month offset 40 (no real person)
+        "85061578907",   # 1985-06-15, serial 7890 (synthetic)
     ])
     def test_valid(self, value: str) -> None:
         assert validate_pesel(value) is True
@@ -30,12 +30,12 @@ class TestPesel:
     @pytest.mark.parametrize("value,reason", [
         ("12345678901", "random digits"),
         ("99999999999", "all nines"),
-        ("44051401358", "off-by-one checksum"),
-        ("44131401359", "month 13 invalid"),
-        ("44050001359", "day 00 invalid"),
-        ("44053201359", "day 32 invalid"),
-        ("4405140135", "too short"),
-        ("440514013590", "too long"),
+        ("99123175314", "off-by-one checksum"),
+        ("99133175313", "month 13 invalid"),
+        ("99120075313", "day 00 invalid"),
+        ("99123275313", "day 32 invalid"),
+        ("9912317531", "too short"),
+        ("991231753130", "too long"),
         ("", "empty"),
         ("abc", "non-digit"),
         ("00000000000", "all zeros"),
@@ -46,9 +46,9 @@ class TestPesel:
 
 class TestNip:
     @pytest.mark.parametrize("value", [
-        "5260250274",
-        "526-025-02-74",
-        "7680002466",
+        "0012345621",
+        "001-234-56-21",
+        "0011111157",
     ])
     def test_valid(self, value: str) -> None:
         assert validate_nip(value) is True
@@ -56,9 +56,9 @@ class TestNip:
     @pytest.mark.parametrize("value,reason", [
         ("1234567890", "random digits"),
         ("0000000000", "all zeros"),
-        ("5260250273", "off-by-one checksum"),
-        ("526025027", "too short"),
-        ("52602502741", "too long"),
+        ("0012345620", "off-by-one checksum"),
+        ("001234562", "too short"),
+        ("00123456211", "too long"),
     ])
     def test_invalid(self, value: str, reason: str) -> None:
         assert validate_nip(value) is False, reason
@@ -66,16 +66,16 @@ class TestNip:
 
 class TestRegon:
     def test_valid_9_digit(self) -> None:
-        assert validate_regon("123456785") is True
+        assert validate_regon("100000014") is True
 
     def test_valid_14_digit(self) -> None:
-        assert validate_regon("12345678512347") is True
+        assert validate_regon("10000001400014") is True
 
     def test_invalid_9_digit(self) -> None:
         assert validate_regon("123456789") is False
 
     def test_invalid_14_digit_bad_prefix(self) -> None:
-        assert validate_regon("12345678912347") is False
+        assert validate_regon("10000001500014") is False
 
     def test_invalid_length(self) -> None:
         assert validate_regon("12345") is False
@@ -86,8 +86,8 @@ class TestRegon:
 
 class TestIban:
     @pytest.mark.parametrize("value", [
-        "PL61109010140000071219812874",
-        "PL61 1090 1014 0000 0712 1981 2874",
+        "PL74000000000000000000000001",
+        "PL74 0000 0000 0000 0000 0000 0001",
         "DE89370400440532013000",
         "GB29NWBK60161331926819",
         "FR7630006000011234567890189",
@@ -96,7 +96,7 @@ class TestIban:
         assert validate_iban(value) is True
 
     @pytest.mark.parametrize("value,reason", [
-        ("PL00109010140000071219812874", "bad check digits"),
+        ("PL00000000000000000000000001", "bad check digits"),
         ("INVALID", "non-IBAN string"),
         ("PL61", "too short"),
         ("AB", "way too short"),
@@ -108,8 +108,8 @@ class TestIban:
 
 class TestLuhn:
     @pytest.mark.parametrize("value", [
-        "4532015112830366",
-        "4532 0151 1283 0366",
+        "4111111111111111",
+        "4111 1111 1111 1111",
         "79927398713",         # 11-digit Luhn test but under min length
         "4111111111111111",    # classic test number
         "5500000000000004",    # MC test
@@ -121,8 +121,8 @@ class TestLuhn:
             assert validate_luhn(value) is True
 
     @pytest.mark.parametrize("value,reason", [
-        ("4532015112830367", "off-by-one"),
-        ("4532", "too short"),
+        ("4111111111111112", "off-by-one"),
+        ("4111", "too short"),
         ("", "empty"),
     ])
     def test_invalid(self, value: str, reason: str) -> None:

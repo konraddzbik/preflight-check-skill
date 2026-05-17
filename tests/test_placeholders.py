@@ -12,8 +12,8 @@ from core.placeholders import PlaceholderRegistry
 class TestBasicMapping:
     def test_stable_mapping(self) -> None:
         reg = PlaceholderRegistry()
-        p1 = reg.get_placeholder("PESEL", "44051401359")
-        p2 = reg.get_placeholder("PESEL", "44051401359")
+        p1 = reg.get_placeholder("PESEL", "99123175313")
+        p2 = reg.get_placeholder("PESEL", "99123175313")
         assert p1 == p2
 
     def test_different_values_get_different_placeholders(self) -> None:
@@ -24,7 +24,7 @@ class TestBasicMapping:
 
     def test_placeholder_format(self) -> None:
         reg = PlaceholderRegistry()
-        p = reg.get_placeholder("PESEL", "44051401359")
+        p = reg.get_placeholder("PESEL", "99123175313")
         assert p == "[REDACTED_PESEL_001]"
 
     def test_counter_increments(self) -> None:
@@ -37,18 +37,18 @@ class TestBasicMapping:
 class TestReverseMap:
     def test_reverse_map(self) -> None:
         reg = PlaceholderRegistry()
-        reg.get_placeholder("PESEL", "44051401359")
+        reg.get_placeholder("PESEL", "99123175313")
         rmap = reg.reverse_map()
         assert "[REDACTED_PESEL_001]" in rmap
         cat, val = rmap["[REDACTED_PESEL_001]"]
         assert cat == "PESEL"
-        assert val == "44051401359"
+        assert val == "99123175313"
 
 
 class TestClear:
     def test_clear_wipes_state(self) -> None:
         reg = PlaceholderRegistry()
-        reg.get_placeholder("PESEL", "44051401359")
+        reg.get_placeholder("PESEL", "99123175313")
         reg.clear()
         assert reg.reverse_map() == {}
 
@@ -56,7 +56,7 @@ class TestClear:
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = Path(f.name)
         reg = PlaceholderRegistry(state_path=path)
-        reg.get_placeholder("PESEL", "44051401359")
+        reg.get_placeholder("PESEL", "99123175313")
         assert path.exists()
         reg.clear()
         assert not path.exists()
@@ -68,10 +68,10 @@ class TestPersistence:
             path = Path(f.name)
         try:
             reg1 = PlaceholderRegistry(state_path=path)
-            p1 = reg1.get_placeholder("PESEL", "44051401359")
+            p1 = reg1.get_placeholder("PESEL", "99123175313")
 
             reg2 = PlaceholderRegistry(state_path=path)
-            p2 = reg2.get_placeholder("PESEL", "44051401359")
+            p2 = reg2.get_placeholder("PESEL", "99123175313")
             assert p1 == p2
         finally:
             path.unlink(missing_ok=True)

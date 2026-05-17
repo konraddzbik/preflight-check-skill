@@ -66,7 +66,7 @@ echo "My AWS key is AKIAIOSFODNN7EXAMPLE" | preflight-check
 ## Demo
 
 ```
-$ echo "PESEL 44051401359, email user@corp.com, key AKIAIOSFODNN7EXAMPLE" | preflight-check scan
+$ echo "PESEL 99123175313, email user@corp.com, key AKIAIOSFODNN7EXAMPLE" | preflight-check scan
 PESEL [REDACTED_PESEL_001], email [REDACTED_EMAIL_001], key [REDACTED_AWS_ACCESS_KEY_001]
 
 $ # Hook on PreToolUse — redacts tool input in place:

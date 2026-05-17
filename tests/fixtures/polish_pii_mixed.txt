@@ -1,10 +1,10 @@
 Raport z przetwarzania danych osobowych:
 
 Klient: Jan Kowalski
-PESEL: 44051401359
-NIP firmy: 5260250274
-REGON: 123456785
-IBAN: PL61 1090 1014 0000 0712 1981 2874
+PESEL: 99123175313
+NIP firmy: 0012345621
+REGON: 100000014
+IBAN: PL74 0000 0000 0000 0000 0000 0001
 Email: jan.kowalski@example.com
 Telefon: +48 123 456 789
 

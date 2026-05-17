@@ -31,8 +31,8 @@ class TestBasicDetection:
         assert result.had_critical
 
     def test_pesel(self, redactor: Redactor) -> None:
-        result = redactor.redact("PESEL: 44051401359")
-        assert "44051401359" not in result.text
+        result = redactor.redact("PESEL: 99123175313")
+        assert "99123175313" not in result.text
         assert "[REDACTED_PESEL_" in result.text
 
     def test_email(self, redactor: Redactor) -> None:
@@ -46,15 +46,15 @@ class TestBasicDetection:
         assert result.had_critical
 
     def test_nip(self, redactor: Redactor) -> None:
-        result = redactor.redact("NIP: 5260250274")
-        assert "5260250274" not in result.text
+        result = redactor.redact("NIP: 0012345621")
+        assert "0012345621" not in result.text
 
 
 class TestMultiSecret:
     def test_multiple_secrets_in_one_string(self, redactor: Redactor) -> None:
-        text = "PESEL 44051401359, email foo@bar.com, key AKIAIOSFODNN7EXAMPLE"
+        text = "PESEL 99123175313, email foo@bar.com, key AKIAIOSFODNN7EXAMPLE"
         result = redactor.redact(text)
-        assert "44051401359" not in result.text
+        assert "99123175313" not in result.text
         assert "foo@bar.com" not in result.text
         assert "AKIAIOSFODNN7EXAMPLE" not in result.text
         assert len(result.findings) == 3
@@ -67,7 +67,7 @@ class TestMultiSecret:
 
 class TestPlaceholderStability:
     def test_same_value_same_placeholder(self, fresh_redactor: Redactor) -> None:
-        text = "first 44051401359 then again 44051401359"
+        text = "first 99123175313 then again 99123175313"
         result = fresh_redactor.redact(text)
         placeholders = [f.placeholder for f in result.findings]
         assert len(placeholders) == 2
@@ -86,7 +86,7 @@ class TestPhonePLRegression:
         assert result.text == "number 123456789"
 
     def test_pesel_not_eaten_by_phone(self, redactor: Redactor) -> None:
-        result = redactor.redact("PESEL 44051401359")
+        result = redactor.redact("PESEL 99123175313")
         assert "[REDACTED_PESEL_" in result.text
         assert "PHONE_PL" not in result.text
 
@@ -109,7 +109,7 @@ class TestPhonePLRegression:
 
 class TestOverlapResolution:
     def test_higher_severity_wins(self, redactor: Redactor) -> None:
-        result = redactor.redact("PESEL 44051401359")
+        result = redactor.redact("PESEL 99123175313")
         assert len(result.findings) == 1
         assert result.findings[0].pattern_id == "PESEL"
         assert result.findings[0].severity == "critical"

@@ -9,7 +9,7 @@ Usage:
     from core.redactor import Redactor
 
     redactor = Redactor.from_default_catalog()
-    result = redactor.redact("My PESEL is 44051401359")
+    result = redactor.redact("My PESEL is 99123175313")
     print(result.text)     # "My PESEL is [REDACTED_PESEL_001]"
     print(result.findings) # [Finding(category='PESEL', ...)]
 """

@@ -7,7 +7,7 @@ First, I configured the AWS credentials:
   AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
 
 The pipeline reads from our customer database. During testing I noticed
-a record for Jan Kowalski (PESEL: 44051401359, NIP: 526-025-02-74)
+a record for Jan Kowalski (PESEL: 99123175313, NIP: 001-234-56-21)
 that kept causing validation errors. His email is jan.kowalski@example.com
 and phone is +48 123 456 789.
 

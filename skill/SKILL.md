@@ -31,7 +31,7 @@ preflight-check scan --file notes.txt > notes.redacted.txt
 ### Redact piped text
 
 ```bash
-echo "my PESEL is 44051401359" | preflight-check scan
+echo "my PESEL is 99123175313" | preflight-check scan
 ```
 
 ### Redact clipboard (macOS/Linux)
