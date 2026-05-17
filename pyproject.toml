@@ -42,6 +42,9 @@ Issues = "https://github.com/konraddzbik/preflight-check-skill/issues"
 [tool.setuptools.packages.find]
 include = ["core*"]
 
+[tool.setuptools.package-data]
+core = ["catalog.yaml", "gitleaks.toml"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py310"

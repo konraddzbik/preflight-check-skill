@@ -50,9 +50,10 @@ def _cmd_scan(args: argparse.Namespace) -> int:
         result = redactor.redact(text)
         sys.stdout.write(result.text)
         if result.findings:
+            summary = ", ".join(f"{k}={v}" for k, v in result.summary().items())
             sys.stderr.write(
                 f"[preflight-check] {len(result.findings)} finding(s): "
-                f"{result.summary()}\n"
+                f"{summary}\n"
             )
 
     return 0

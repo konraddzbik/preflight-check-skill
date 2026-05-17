@@ -13,7 +13,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-HOOK_SCRIPT = str(Path(__file__).parent.parent / "hook" / "claude_redact_hook.py")
+REPO_ROOT = str(Path(__file__).parent.parent)
+HOOK_SCRIPT = str(Path(REPO_ROOT) / "hook" / "claude_redact_hook.py")
 
 
 def _run_hook(
@@ -21,6 +22,7 @@ def _run_hook(
 ) -> tuple[int, str, str]:
     env = os.environ.copy()
     env["PREFLIGHT_MODE"] = mode
+    env["PYTHONPATH"] = REPO_ROOT + os.pathsep + env.get("PYTHONPATH", "")
     if env_extra:
         env.update(env_extra)
 
@@ -195,3 +197,11 @@ class TestErrorHandling:
         assert code == 0
         output = json.loads(out)
         assert "hookSpecificOutput" in output
+
+    def test_hook_imports_successfully(self) -> None:
+        """Verify hook can import core — not silently failing open."""
+        code, out, err = _run_hook(
+            {"hook_event_name": "UserPromptSubmit", "prompt": "hello"},
+            mode="default",
+        )
+        assert "import error" not in err, f"Hook failed to import: {err}"

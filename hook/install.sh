@@ -3,6 +3,7 @@ set -euo pipefail
 
 # preflight-check-skill — Hook installer
 # Idempotent: safe to run multiple times.
+# Expects PREFLIGHT_BIN env var (absolute path to preflight-check CLI).
 
 SETTINGS_FILE="$HOME/.claude/settings.json"
 CONFIG_FILE="$HOME/.claude/preflight.yaml"
@@ -10,53 +11,50 @@ CONFIG_FILE="$HOME/.claude/preflight.yaml"
 echo "=== preflight-check-skill hook installer ==="
 echo ""
 
-# 1. Check Python 3.10+
-if ! command -v python3 &>/dev/null; then
-    echo "ERROR: python3 not found. Install Python 3.10+ first."
-    exit 1
-fi
-
-PY_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-PY_MAJOR=$(echo "$PY_VERSION" | cut -d. -f1)
-PY_MINOR=$(echo "$PY_VERSION" | cut -d. -f2)
-
-if [ "$PY_MAJOR" -lt 3 ] || ([ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -lt 10 ]); then
-    echo "ERROR: Python 3.10+ required (found $PY_VERSION)"
-    exit 1
-fi
-echo "[ok] Python $PY_VERSION"
-
-# 2. Verify preflight-check CLI is available
-if ! command -v preflight-check &>/dev/null; then
+# 1. Resolve CLI path
+if [ -n "${PREFLIGHT_BIN:-}" ]; then
+    CLI_PATH="$PREFLIGHT_BIN"
+elif command -v preflight-check &>/dev/null; then
+    CLI_PATH="$(command -v preflight-check)"
+else
     echo "ERROR: preflight-check not found on PATH."
-    echo "  Run: pip install preflight-check-skill"
+    echo "  Set PREFLIGHT_BIN or run: pip install preflight-check-skill"
     exit 1
 fi
-echo "[ok] CLI: $(command -v preflight-check)"
 
-# 3. Ensure ~/.claude/ exists
+# Resolve to absolute path
+CLI_PATH="$(cd "$(dirname "$CLI_PATH")" && pwd)/$(basename "$CLI_PATH")"
+echo "[ok] CLI: $CLI_PATH"
+
+# 2. Ensure ~/.claude/ exists
 mkdir -p "$HOME/.claude"
 
-# 4. Back up existing settings.json
+# 3. Back up existing settings.json
 if [ -f "$SETTINGS_FILE" ]; then
     BACKUP="$SETTINGS_FILE.bak.$(date +%s)"
     cp "$SETTINGS_FILE" "$BACKUP"
     echo "[ok] Backed up settings to $BACKUP"
 fi
 
-# 5. Register hooks in settings.json (idempotent, matcher wrapper format)
+# 4. Register hooks in settings.json (idempotent, uses absolute CLI path)
 python3 << PYEOF
 import json
 import os
+import sys
 
 settings_file = "$SETTINGS_FILE"
-hook_cmd = "preflight-check hook"
+hook_cmd = "$CLI_PATH hook"
 
-if os.path.exists(settings_file):
-    with open(settings_file, "r") as f:
-        settings = json.load(f)
-else:
-    settings = {}
+try:
+    if os.path.exists(settings_file):
+        with open(settings_file, "r") as f:
+            settings = json.load(f)
+    else:
+        settings = {}
+except json.JSONDecodeError:
+    print(f"ERROR: {settings_file} contains invalid JSON.", file=sys.stderr)
+    print("  Fix it manually or delete it and re-run this installer.", file=sys.stderr)
+    sys.exit(1)
 
 if "hooks" not in settings:
     settings["hooks"] = {}
@@ -64,12 +62,11 @@ if "hooks" not in settings:
 for event in ["UserPromptSubmit", "PreToolUse"]:
     matcher_groups = settings["hooks"].get(event, [])
 
-    # Check if already registered in any matcher group
     already_registered = False
     for group in matcher_groups:
         if isinstance(group, dict):
             for h in group.get("hooks", []):
-                if isinstance(h, dict) and h.get("command") == hook_cmd:
+                if isinstance(h, dict) and "preflight-check" in h.get("command", ""):
                     already_registered = True
                     break
 
@@ -86,7 +83,7 @@ with open(settings_file, "w") as f:
 print("[ok] Hooks registered in " + settings_file)
 PYEOF
 
-# 6. Create default config if missing
+# 5. Create default config if missing
 if [ ! -f "$CONFIG_FILE" ]; then
     cat > "$CONFIG_FILE" << 'YAML'
 # preflight-check-skill configuration
@@ -100,9 +97,10 @@ else
 fi
 
 echo ""
-echo "=== Installation complete ==="
+echo "=== Hook installation complete ==="
 echo ""
 echo "Hooks registered for: UserPromptSubmit, PreToolUse"
+echo "Hook command: $CLI_PATH hook"
 echo "Mode: $(grep 'mode:' "$CONFIG_FILE" | head -1 | awk '{print $2}')"
 echo ""
 echo "Next steps:"
