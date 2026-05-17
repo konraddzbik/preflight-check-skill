@@ -1,0 +1,9 @@
+title = "preflight-check-skill gitleaks config"
+
+# Test fixtures and example files contain intentional synthetic secrets
+# used to demonstrate and test the detection engine. All values are fake.
+[allowlist]
+paths = [
+    '''tests/fixtures/.*''',
+    '''skill/examples/.*''',
+]
