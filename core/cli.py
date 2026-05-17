@@ -58,6 +58,11 @@ def _cmd_scan(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_hook(_args: argparse.Namespace) -> int:
+    from core.hook_handler import main as hook_main
+    return hook_main()
+
+
 def _cmd_status(_args: argparse.Namespace) -> int:
     settings_path = Path.home() / ".claude" / "settings.json"
     config_path = Path.home() / ".claude" / "preflight.yaml"
@@ -75,10 +80,13 @@ def _cmd_status(_args: argparse.Namespace) -> int:
             settings = json.loads(settings_path.read_text())
             hooks = settings.get("hooks", {})
             registered = any(
-                "claude_redact_hook" in h.get("command", "")
+                "preflight-check hook" in cmd or "claude_redact_hook" in cmd
                 for event_hooks in hooks.values()
-                for h in event_hooks
+                for group in event_hooks
+                if isinstance(group, dict)
+                for h in group.get("hooks", [])
                 if isinstance(h, dict)
+                for cmd in [h.get("command", "")]
             )
             if registered:
                 print(f"[ok] Hook: registered in {settings_path}")
@@ -116,11 +124,14 @@ def main() -> int:
         "--json", "-j", action="store_true", help="Parse input as JSON (hook mode)"
     )
 
+    subparsers.add_parser("hook", help="Run as Claude Code hook (reads stdin)")
     subparsers.add_parser("status", help="Show installation status")
 
     args = parser.parse_args()
 
-    if args.command == "status":
+    if args.command == "hook":
+        return _cmd_hook(args)
+    elif args.command == "status":
         return _cmd_status(args)
     elif args.command == "scan":
         return _cmd_scan(args)

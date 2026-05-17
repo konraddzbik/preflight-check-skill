@@ -71,7 +71,7 @@ PESEL [REDACTED_PESEL_001], email [REDACTED_EMAIL_001], key [REDACTED_AWS_ACCESS
 
 $ # Hook on PreToolUse — redacts tool input in place:
 $ echo '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"echo AKIAIOSFODNN7EXAMPLE"}}' \
-  | python3 hook/claude_redact_hook.py
+  | preflight-check hook
 {"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","updatedInput":{"command":"echo [REDACTED_AWS_ACCESS_KEY_001]"}}}
 
 $ preflight-check status

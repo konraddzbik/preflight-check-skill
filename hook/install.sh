@@ -4,8 +4,6 @@ set -euo pipefail
 # preflight-check-skill — Hook installer
 # Idempotent: safe to run multiple times.
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-HOOK_SCRIPT="$SCRIPT_DIR/claude_redact_hook.py"
 SETTINGS_FILE="$HOME/.claude/settings.json"
 CONFIG_FILE="$HOME/.claude/preflight.yaml"
 
@@ -28,12 +26,13 @@ if [ "$PY_MAJOR" -lt 3 ] || ([ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -lt 10 ]); t
 fi
 echo "[ok] Python $PY_VERSION"
 
-# 2. Check hook script exists
-if [ ! -f "$HOOK_SCRIPT" ]; then
-    echo "ERROR: Hook script not found at $HOOK_SCRIPT"
+# 2. Verify preflight-check CLI is available
+if ! command -v preflight-check &>/dev/null; then
+    echo "ERROR: preflight-check not found on PATH."
+    echo "  Run: pip install preflight-check-skill"
     exit 1
 fi
-echo "[ok] Hook script: $HOOK_SCRIPT"
+echo "[ok] CLI: $(command -v preflight-check)"
 
 # 3. Ensure ~/.claude/ exists
 mkdir -p "$HOME/.claude"
@@ -51,7 +50,7 @@ import json
 import os
 
 settings_file = "$SETTINGS_FILE"
-hook_cmd = "python3 $HOOK_SCRIPT"
+hook_cmd = "preflight-check hook"
 
 if os.path.exists(settings_file):
     with open(settings_file, "r") as f:
