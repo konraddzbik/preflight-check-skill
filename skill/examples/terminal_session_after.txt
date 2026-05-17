@@ -1,0 +1,18 @@
+$ export GITHUB_TOKEN=[REDACTED_GITHUB_TOKEN_001]
+$ export OPENAI_API_KEY=[REDACTED_OPENAI_KEY_001]
+
+$ curl -H "Authorization: [REDACTED_GENERIC_BEARER_001]" https://api.example.com/data
+
+Response: 200 OK
+{
+  "customer": {
+    "name": "Anna Nowak",
+    "pesel": "[REDACTED_PESEL_001]",
+    "iban": "[REDACTED_IBAN_PL_001]",
+    "email": "[REDACTED_EMAIL_001]",
+    "phone": "[REDACTED_PHONE_PL_001]"
+  }
+}
+
+$ echo "Done processing record for SSN [REDACTED_SSN_001]"
+$ echo "Payment via card [REDACTED_CREDIT_CARD_002]"

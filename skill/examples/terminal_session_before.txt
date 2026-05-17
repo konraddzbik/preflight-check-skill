@@ -1,0 +1,18 @@
+$ export GITHUB_TOKEN=ghp_ABCDEFghijklmnopqrstuvwxyz1234567890
+$ export OPENAI_API_KEY=sk-proj-abcdefghijklmnopqrstuvwxyz01234567890ABCDEFGHIJ
+
+$ curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkphbiBLb3dhbHNraSIsImlhdCI6MTUxNjIzOTAyMn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c" https://api.example.com/data
+
+Response: 200 OK
+{
+  "customer": {
+    "name": "Anna Nowak",
+    "pesel": "02070803628",
+    "iban": "PL61 1090 1014 0000 0712 1981 2874",
+    "email": "anna.nowak@example.pl",
+    "phone": "+48 987 654 321"
+  }
+}
+
+$ echo "Done processing record for SSN 123-45-6789"
+$ echo "Payment via card 4532 0151 2345 6789"

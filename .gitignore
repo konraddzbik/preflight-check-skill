@@ -1,0 +1,78 @@
+# ============================================================
+# preflight-check-skill .gitignore
+#
+# Build artifacts (generated, not source):
+#   build/, dist/, *.egg-info/  — pip/setuptools output
+#   __pycache__/, *.pyc         — Python bytecode
+#   .venv/                      — local virtual environment
+#   .coverage, htmlcov/         — test coverage reports
+#   .pytest_cache/              — pytest state
+#   .ruff_cache/                — linter cache
+#
+# Source (tracked):
+#   core/          — detection engine (redactor, validators, gitleaks wrapper)
+#   hook/          — Claude Code hook entry point + installer
+#   skill/         — SKILL.md + helper scripts + examples
+#   tests/         — pytest suite + synthetic fixtures
+#   install.sh     — one-command installer
+#   pyproject.toml — package metadata
+# ============================================================
+
+# Python build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Testing and linting
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Runtime state and logs (generated at install/runtime)
+.preflight-check/
+preflight-state.json
+preflight.log
+
+# Never commit real secrets — even by accident
+.env
+.env.*
+!.env.example
+secrets/
+credentials.json
+*.pem
+*.key
+!tests/fixtures/*.key   # synthetic test fixtures only

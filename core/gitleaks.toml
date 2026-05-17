@@ -1,0 +1,35 @@
+# preflight-check-skill — Custom gitleaks rules
+# Extends gitleaks defaults with patterns for AI service keys
+# and other formats not well-covered by the built-in ruleset.
+
+title = "preflight-check-skill custom rules"
+
+[[rules]]
+id = "anthropic-api-key"
+description = "Anthropic API Key"
+regex = '''sk-ant-[a-zA-Z0-9\-_]{90,}'''
+keywords = ["sk-ant-"]
+
+[[rules]]
+id = "openai-project-key"
+description = "OpenAI Project API Key"
+regex = '''sk-proj-[a-zA-Z0-9_\-]{40,}'''
+keywords = ["sk-proj-"]
+
+[[rules]]
+id = "openai-legacy-key"
+description = "OpenAI Legacy API Key"
+regex = '''sk-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20}'''
+keywords = ["T3BlbkFJ"]
+
+[[rules]]
+id = "azure-storage-connection-string"
+description = "Azure Storage Account Connection String"
+regex = '''DefaultEndpointsProtocol=https;AccountName=[^;]+;AccountKey=[A-Za-z0-9+/=]+'''
+keywords = ["DefaultEndpointsProtocol"]
+
+[[rules]]
+id = "generic-bearer-token"
+description = "Bearer token in authorization header"
+regex = '''(?i)bearer\s+[A-Za-z0-9_\-\.=]{20,}'''
+keywords = ["bearer"]

@@ -1,0 +1,169 @@
+# preflight-check-skill — Detection Pattern Catalog
+#
+# All regex patterns and detection rules live here.
+# Users can disable categories or add custom patterns without touching code.
+#
+# Each pattern has:
+#   - id:          unique identifier (used in placeholders)
+#   - category:    high-level group (cloud_keys, polish_pii, eu_pii, us_pii)
+#   - description: human-readable
+#   - pattern:     Python regex (case-sensitive by default)
+#   - validator:   optional Python callable from core.detectors.validators
+#   - severity:    critical | high | medium | low
+#   - enabled:     true | false
+
+version: 1
+
+cloud_keys:
+  - id: AWS_ACCESS_KEY
+    description: AWS Access Key ID
+    pattern: '\bAKIA[0-9A-Z]{16}\b'
+    severity: critical
+    enabled: true
+
+  - id: AWS_SECRET_KEY
+    description: AWS Secret Access Key (context-required)
+    # Anchored to typical assignment patterns to reduce false positives
+    pattern: '(?i)aws[_-]?secret[_-]?access[_-]?key["\s:=]+[A-Za-z0-9/+=]{40}'
+    severity: critical
+    enabled: true
+
+  - id: GCP_SERVICE_ACCOUNT
+    description: GCP service account JSON private key marker
+    pattern: '-----BEGIN PRIVATE KEY-----'
+    severity: critical
+    enabled: true
+
+  - id: GCP_API_KEY
+    description: Google Cloud API key
+    pattern: '\bAIza[0-9A-Za-z\-_]{35}\b'
+    severity: critical
+    enabled: true
+
+  - id: AZURE_STORAGE_KEY
+    description: Azure storage account connection string
+    pattern: 'DefaultEndpointsProtocol=https;AccountName=[^;]+;AccountKey=[A-Za-z0-9+/=]+'
+    severity: critical
+    enabled: true
+
+  - id: OPENAI_KEY
+    description: OpenAI API key
+    pattern: '\bsk-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20}\b|\bsk-proj-[a-zA-Z0-9_\-]{40,}\b'
+    severity: critical
+    enabled: true
+
+  - id: ANTHROPIC_KEY
+    description: Anthropic API key
+    pattern: '\bsk-ant-[a-zA-Z0-9\-_]{90,}\b'
+    severity: critical
+    enabled: true
+
+  - id: GITHUB_TOKEN
+    description: GitHub personal access token
+    pattern: '\bgh[pousr]_[A-Za-z0-9]{36,}\b'
+    severity: critical
+    enabled: true
+
+  - id: SLACK_TOKEN
+    description: Slack token
+    pattern: '\bxox[abprs]-[A-Za-z0-9-]{10,}\b'
+    severity: high
+    enabled: true
+
+  - id: JWT_TOKEN
+    description: JSON Web Token
+    pattern: '\beyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b'
+    severity: high
+    enabled: true
+
+  - id: GENERIC_BEARER
+    description: Generic Bearer token in headers
+    pattern: '(?i)bearer\s+[A-Za-z0-9_\-\.=]{20,}'
+    severity: high
+    enabled: true
+
+polish_pii:
+  - id: PESEL
+    description: Polish national identification number (11 digits, validated)
+    pattern: '\b\d{11}\b'
+    validator: validate_pesel
+    severity: critical
+    enabled: true
+
+  - id: NIP
+    description: Polish tax ID (10 digits, validated)
+    # Matches both raw and formatted: 1234567890 or 123-456-78-90
+    pattern: '\b\d{3}[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}\b|\b\d{10}\b'
+    validator: validate_nip
+    severity: high
+    enabled: true
+
+  - id: REGON
+    description: Polish business registry number (9 or 14 digits, validated)
+    pattern: '\b\d{14}\b|\b\d{9}\b'
+    validator: validate_regon
+    severity: medium
+    enabled: true
+
+  - id: IBAN_PL
+    description: Polish IBAN (PL + 26 digits, mod-97 validated)
+    pattern: '\bPL\d{2}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}\b'
+    validator: validate_iban
+    severity: critical
+    enabled: true
+
+  - id: DOWOD_OSOBISTY
+    description: Polish ID card number (3 letters + 6 digits)
+    pattern: '\b[A-Z]{3}\d{6}\b'
+    severity: high
+    enabled: true
+
+eu_pii:
+  - id: EMAIL
+    description: Email address
+    pattern: '\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b'
+    severity: medium
+    enabled: true
+
+  - id: PHONE_E164
+    description: International phone number (E.164 format)
+    pattern: '\+[1-9]\d{7,14}\b'
+    severity: medium
+    enabled: true
+
+  - id: PHONE_PL
+    description: Polish phone number (with/without country code)
+    # Branch 1: +48 prefix (separators optional)
+    # Branch 2: no prefix but separators required (prevents bare 9-digit matches)
+    pattern: '(?<!\d)\+48[\s\-]?(?:\d{3}[\s\-]?\d{3}[\s\-]?\d{3}|\d{2}[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2})(?!\d)|(?<!\d)(?:\d{3}[\s\-]\d{3}[\s\-]\d{3}|\d{2}[\s\-]\d{3}[\s\-]\d{2}[\s\-]\d{2})(?!\d)'
+    severity: medium
+    enabled: true
+
+  - id: IBAN_GENERIC
+    description: Generic IBAN (any country, mod-97 validated)
+    pattern: '\b[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}\b'
+    validator: validate_iban
+    severity: high
+    enabled: true
+
+us_pii:
+  - id: SSN
+    description: US Social Security Number
+    pattern: '\b(?!000|666|9\d{2})\d{3}-(?!00)\d{2}-(?!0000)\d{4}\b'
+    severity: critical
+    enabled: true
+
+  - id: CREDIT_CARD
+    description: Credit card number (Luhn validated)
+    pattern: '\b(?:\d{4}[\s\-]?){3}\d{4}\b|\b\d{13,19}\b'
+    validator: validate_luhn
+    severity: critical
+    enabled: true
+
+# Entropy-based fallback for unknown-format secrets
+# Conservative threshold to minimize false positives on base64 blobs / hashes
+entropy:
+  enabled: true
+  min_length: 32
+  min_entropy: 4.5     # Shannon entropy threshold
+  exclude_in_code_comments: true

@@ -1,0 +1,11 @@
+This is a regular document with no secrets or PII.
+
+It discusses software architecture patterns like microservices,
+event sourcing, and CQRS. The project uses Python 3.12 with
+FastAPI and SQLAlchemy.
+
+Order numbers like ORD-2024-001234 and invoice IDs like
+INV-98765 should not trigger false positives.
+
+Regular numbers: 42, 3.14159, 2024, 100000.
+Hexadecimal: 0xDEADBEEF, #FF5733.

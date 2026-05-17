@@ -1,0 +1,21 @@
+How I Built a Data Pipeline with Claude Code
+
+Last week I set up a new ETL pipeline for our analytics team. Here's how it went.
+
+First, I configured the AWS credentials:
+  AWS_ACCESS_KEY_ID=[REDACTED_AWS_ACCESS_KEY_001]
+  [REDACTED_AWS_SECRET_KEY_001]
+
+The pipeline reads from our customer database. During testing I noticed
+a record for Jan Kowalski (PESEL: [REDACTED_PESEL_001], NIP: [REDACTED_NIP_001])
+that kept causing validation errors. His email is [REDACTED_EMAIL_001]
+and phone is [REDACTED_PHONE_PL_001].
+
+I also used the Anthropic API to enrich the data:
+  ANTHROPIC_API_KEY=[REDACTED_ANTHROPIC_KEY_001]
+
+For monitoring, I connected to Slack:
+  SLACK_TOKEN=[REDACTED_SLACK_TOKEN_001]
+
+The pipeline processes about 10,000 records per hour. Contact me at
+[REDACTED_EMAIL_002] if you want the full setup guide.

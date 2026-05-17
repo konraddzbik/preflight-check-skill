@@ -1,0 +1,17 @@
+Raport z przetwarzania danych osobowych:
+
+Klient: Jan Kowalski
+PESEL: 44051401359
+NIP firmy: 5260250274
+REGON: 123456785
+IBAN: PL61 1090 1014 0000 0712 1981 2874
+Email: jan.kowalski@example.com
+Telefon: +48 123 456 789
+
+Zwykly numer zamowienia: 20240517001
+Numer faktury: FV/2024/05/0042
+Kwota: 1234,56 PLN
+
+Te numery nie powinny byc wykryte:
+- 12345 (za krotki na PESEL)
+- 9876543210 (nie przechodzi walidacji NIP)
