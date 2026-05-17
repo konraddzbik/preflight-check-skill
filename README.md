@@ -95,6 +95,23 @@ preflight-check-skill status
 [ok] Skill: installed at ~/.claude/skills/preflight-check
 ```
 
+### Using in Claude Code
+
+**Hooks run automatically** - no action needed. Every prompt and tool use is scanned:
+- Secrets/PII are detected and redacted automatically
+- Logs saved to `~/.claude/preflight.log`
+
+**Skill runs on demand** - when you want to redact manually:
+
+```
+/preflight-check
+```
+
+Or natural language triggers:
+- "redact this", "anonymize", "scrub this"
+- "remove secrets", "clean before sharing"
+- "zanonimizuj", "usun sekrety", "wyczysc przed publikacja"
+
 ---
 
 ## Architecture
@@ -247,6 +264,38 @@ pip uninstall preflight-check-skill
 pip install -e ".[dev]"
 pytest --cov=core
 ruff check .
+```
+
+### Testing
+
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run specific test file
+pytest tests/test_redactor.py -v
+
+# Run with coverage
+pytest tests/ --cov=core --cov-report=term-missing
+
+# Quick smoke test
+echo "My PESEL is 99123175313" | preflight-check scan
+
+# Test hook mode
+echo '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"echo AKIAIOSFODNN7EXAMPLE"}}' | preflight-check hook
+```
+
+### Troubleshooting
+
+```bash
+# Check hook status
+preflight-check status
+
+# View detection logs
+cat ~/.claude/preflight.log
+
+# Test redaction manually
+echo "My PESEL is 99123175313 and AWS key AKIAIOSFODNN7EXAMPLE" | preflight-check scan
 ```
 
 ## Contributing
