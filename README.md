@@ -40,7 +40,9 @@ A random 11-digit order number won't be flagged as a PESEL.
 
 ---
 
-## Quick start
+## Installation
+
+### Option 1: Full installation (recommended)
 
 ```bash
 git clone https://github.com/konraddzbik/preflight-check-skill.git
@@ -53,6 +55,16 @@ The installer will:
 2. Check for `gitleaks` (and offer to install it)
 3. Register the hook in `~/.claude/settings.json`
 4. Copy the skill to `~/.claude/skills/preflight-check/`
+
+### Option 2: Claude Code plugin (if preflight-check is on PATH)
+
+```bash
+# Requires preflight-check to be installed on PATH first
+claude plugin marketplace add https://github.com/konraddzbik/preflight-check-skill
+claude plugin install preflight@preflight-check
+```
+
+This uses the Claude Code plugin system to auto-register hooks.
 
 Test it:
 
@@ -194,11 +206,17 @@ publikacja (blog, LinkedIn, materialy szkoleniowe).
 - REGON (9 i 14 cyfr)
 - IBAN PL (mod-97)
 
-**Szybki start:**
+**Instalacja:**
 ```bash
 git clone https://github.com/konraddzbik/preflight-check-skill.git
 cd preflight-check-skill
 ./install.sh
+```
+
+**Lub przez plugin Claude Code:**
+```bash
+claude plugin marketplace add https://github.com/konraddzbik/preflight-check-skill
+claude plugin install preflight@preflight-check
 ```
 
 Konfiguracja w `core/catalog.yaml`. Mozna dodac wlasne wzorce bez zmiany kodu.

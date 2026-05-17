@@ -1,0 +1,24 @@
+{
+  "hooks": [
+    {
+      "event": "UserPromptSubmit",
+      "matcher": "",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "$CLAUDE_PLUGIN_ROOT/plugins/preflight/hook-wrapper.sh"
+        }
+      ]
+    },
+    {
+      "event": "PreToolUse",
+      "matcher": "",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "$CLAUDE_PLUGIN_ROOT/plugins/preflight/hook-wrapper.sh"
+        }
+      ]
+    }
+  ]
+}
