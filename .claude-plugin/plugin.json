@@ -1,7 +1,7 @@
 {
   "name": "preflight-check",
   "description": "Detect and redact secrets, API keys, and PII from Claude Code conversations. Prevents accidental leakage of Polish PII (PESEL, NIP, REGON, IBAN), cloud credentials (AWS, GCP, Azure, OpenAI, Anthropic), and other sensitive data.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": {
     "name": "Konrad Dzbik",
     "url": "https://github.com/konraddzbik"
@@ -9,7 +9,17 @@
   "homepage": "https://github.com/konraddzbik/preflight-check-skill",
   "repository": "https://github.com/konraddzbik/preflight-check-skill",
   "license": "MIT",
-  "keywords": ["claude", "claude-code", "redaction", "pii", "secrets", "security", "gdpr", "polish", "preflight"],
+  "keywords": [
+    "claude",
+    "claude-code",
+    "redaction",
+    "pii",
+    "secrets",
+    "security",
+    "gdpr",
+    "polish",
+    "preflight"
+  ],
   "skills": [
     "./skills/preflight-check"
   ],

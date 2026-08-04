@@ -50,6 +50,11 @@ polish_pii:
   `VALIDATORS` dict, then reference it by name in the catalog.
 - Always add a test with a **valid** example (should redact) and an **invalid**
   look-alike (should NOT redact) — checksum validation is the whole point.
+- **Patterns must be linear-time.** The hook runs regexes over untrusted pasted
+  text; avoid nested/ambiguous unbounded quantifiers (`(a+)+`, a char class that
+  also contains the following literal). Bound quantifiers with `{m,n}` where a
+  real maximum exists (see `EMAIL`). A pattern that can backtrack catastrophically
+  will hang the hook.
 
 ## Commit / PR conventions
 

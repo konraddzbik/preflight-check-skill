@@ -88,7 +88,8 @@ class TestFindingsConversion:
 
         findings = gitleaks_findings_to_candidates(text, raw, mock_placeholder)
         assert len(findings) == 1
-        assert findings[0].pattern_id == "AWS-ACCESS-KEY"
+        # rule id normalized to underscores to match the regex-catalog ids
+        assert findings[0].pattern_id == "AWS_ACCESS_KEY"
         assert findings[0].start == 7
         assert findings[0].end == 27
 

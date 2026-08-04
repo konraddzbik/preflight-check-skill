@@ -20,7 +20,7 @@ from pathlib import Path
 
 import yaml
 
-from core.redactor import Redactor
+from core.redactor import Redactor, redact_nested
 
 _CONFIG_PATH = Path.home() / ".claude" / "preflight.yaml"
 _DEFAULT_LOG_PATH = Path.home() / ".claude" / "preflight.log"
@@ -118,22 +118,6 @@ def _handle_user_prompt_submit(
     return 0
 
 
-def _redact_nested(obj, redactor: Redactor, findings: list):
-    """Recursively redact all string values in a dict/list structure."""
-    if isinstance(obj, str):
-        result = redactor.redact(obj)
-        findings.extend(result.findings)
-        return result.text if result.findings else obj
-    if isinstance(obj, dict):
-        out = {}
-        for key, val in obj.items():
-            out[key] = _redact_nested(val, redactor, findings)
-        return out
-    if isinstance(obj, list):
-        return [_redact_nested(item, redactor, findings) for item in obj]
-    return obj
-
-
 def _handle_pre_tool_use(
     payload: dict, redactor: Redactor, mode: str, log_path: Path
 ) -> int:
@@ -145,7 +129,7 @@ def _handle_pre_tool_use(
         return 0
 
     all_findings: list = []
-    updated_input = _redact_nested(tool_input, redactor, all_findings)
+    updated_input = redact_nested(tool_input, redactor, all_findings)
 
     _log_findings(all_findings, log_path, f"PreToolUse:{tool_name}")
 

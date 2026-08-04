@@ -145,12 +145,15 @@ class TestEdgeCases:
         result = redactor.redact("key AKIAIOSFODNN7EXAMPLE")
         assert result.had_critical is True
 
-    def test_dowod_osobisty_lowercase(self, redactor: Redactor) -> None:
-        result = redactor.redact("dowod: abc123456")
-        assert "abc123456" not in result.text
-        assert "[REDACTED_DOWOD_OSOBISTY_" in result.text
-
     def test_dowod_osobisty_uppercase(self, redactor: Redactor) -> None:
         result = redactor.redact("dowod: ABC123456")
         assert "ABC123456" not in result.text
         assert "[REDACTED_DOWOD_OSOBISTY_" in result.text
+
+    def test_dowod_osobisty_lowercase_not_matched(self, redactor: Redactor) -> None:
+        # Uppercase-only by design: a lowercase 3-letter+6-digit string is far
+        # more likely an ordinary SKU/part code than a dowod number, and there is
+        # no checksum to gate it — so we must NOT redact it.
+        result = redactor.redact("part code abc123456 in stock")
+        assert result.text == "part code abc123456 in stock"
+        assert not result.findings

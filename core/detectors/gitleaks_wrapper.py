@@ -98,45 +98,64 @@ def run_gitleaks(
                 pass
 
 
+def _normalize_rule_id(rule_id: str) -> str:
+    """gitleaks rule ids use hyphens (aws-access-key); placeholders use
+    underscores to match the regex-catalog ids (AWS_ACCESS_KEY)."""
+    return rule_id.upper().replace("-", "_")
+
+
 def gitleaks_findings_to_candidates(
     text: str,
     raw_findings: list[dict],
     get_placeholder: Callable[[str, str], str],
 ) -> list:
-    """Convert raw gitleaks findings to Finding-compatible tuples.
+    """Convert raw gitleaks findings to Finding objects.
 
-    Returns a list of dicts with keys matching Finding fields, ready for
-    the Redactor to create Finding objects.
+    Redacts **every** occurrence of each flagged secret, not just the first.
+    gitleaks reports the secret value but not a reliable character offset into
+    our input, and ``str.find`` on the first occurrence could redact a benign
+    earlier copy while leaving the real secret in place. Over-redacting an
+    identical benign string is the safe failure mode for a secrets tool;
+    under-redacting (leaking) is not.
+
+    Prefers the ``Secret`` field (the captured secret) over ``Match`` (which may
+    include surrounding rule context), so only the secret itself is replaced.
     """
     from core.redactor import Finding
 
-    candidates = []
-    search_start = 0
+    # Deduplicate by secret literal (a secret flagged by two rules, or reported
+    # twice, should be handled once); keep the first rule id seen for each.
+    secrets: dict[str, str] = {}
     for item in raw_findings:
-        match_text = item.get("Match", item.get("match", ""))
+        secret = item.get("Secret") or item.get("Match") or item.get("match", "")
         rule_id = item.get("RuleID", item.get("ruleID", "GITLEAKS"))
+        if secret:
+            secrets.setdefault(secret, rule_id)
 
-        if not match_text:
-            continue
-
-        start = text.find(match_text, search_start)
-        if start == -1:
-            start = text.find(match_text)
-            if start == -1:
-                continue
-
-        placeholder = get_placeholder(rule_id.upper(), match_text)
-        candidates.append(
-            Finding(
-                pattern_id=rule_id.upper(),
-                category_group="cloud_keys",
-                severity="critical",
-                start=start,
-                end=start + len(match_text),
-                value=match_text,
-                placeholder=placeholder,
-            )
-        )
-        search_start = start + len(match_text)
+    candidates = []
+    seen_spans: set[tuple[int, int]] = set()
+    for secret, rule_id in secrets.items():
+        norm_id = _normalize_rule_id(rule_id)
+        placeholder = get_placeholder(norm_id, secret)
+        start = 0
+        while True:
+            idx = text.find(secret, start)
+            if idx == -1:
+                break
+            span = (idx, idx + len(secret))
+            if span not in seen_spans:
+                seen_spans.add(span)
+                candidates.append(
+                    Finding(
+                        pattern_id=norm_id,
+                        category_group="cloud_keys",
+                        severity="critical",
+                        start=idx,
+                        end=idx + len(secret),
+                        value=secret,
+                        placeholder=placeholder,
+                    )
+                )
+            start = idx + len(secret)
 
     return candidates
