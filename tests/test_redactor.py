@@ -144,3 +144,13 @@ class TestEdgeCases:
         assert result.had_critical is False
         result = redactor.redact("key AKIAIOSFODNN7EXAMPLE")
         assert result.had_critical is True
+
+    def test_dowod_osobisty_lowercase(self, redactor: Redactor) -> None:
+        result = redactor.redact("dowod: abc123456")
+        assert "abc123456" not in result.text
+        assert "[REDACTED_DOWOD_OSOBISTY_" in result.text
+
+    def test_dowod_osobisty_uppercase(self, redactor: Redactor) -> None:
+        result = redactor.redact("dowod: ABC123456")
+        assert "ABC123456" not in result.text
+        assert "[REDACTED_DOWOD_OSOBISTY_" in result.text

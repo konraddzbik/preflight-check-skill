@@ -1,0 +1,21 @@
+{
+  "name": "preflight-check",
+  "owner": {
+    "name": "Konrad Dzbik",
+    "url": "https://github.com/konraddzbik"
+  },
+  "metadata": {
+    "description": "Marketplace for the preflight-check Claude Code plugin — agent-boundary secret & PII redaction.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "preflight-check",
+      "source": "./",
+      "description": "Detect and redact secrets, API keys, and PII (Polish/EU/US, checksum-validated) at the Claude Code agent boundary — UserPromptSubmit + PreToolUse hooks plus a manual redaction skill.",
+      "version": "1.1.0",
+      "license": "MIT",
+      "keywords": ["security", "redaction", "pii", "secrets", "gdpr", "polish"]
+    }
+  ]
+}

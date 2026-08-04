@@ -55,8 +55,10 @@ def _log_findings(findings: list, log_path: Path, event: str) -> None:
         ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         lines = []
         for f in findings:
-            preview = f.value[:20] + "..." if len(f.value) > 20 else f.value
-            lines.append(f"  {f.pattern_id} ({f.severity}): {preview}")
+            lines.append(
+                f"  {f.pattern_id} ({f.severity}) at offset {f.start}:{f.end} "
+                f"[{f.end - f.start} chars]"
+            )
         entry = (
             f"[{ts}] [{event}] {len(findings)} finding(s):\n"
             + "\n".join(lines)
@@ -116,6 +118,22 @@ def _handle_user_prompt_submit(
     return 0
 
 
+def _redact_nested(obj, redactor: Redactor, findings: list):
+    """Recursively redact all string values in a dict/list structure."""
+    if isinstance(obj, str):
+        result = redactor.redact(obj)
+        findings.extend(result.findings)
+        return result.text if result.findings else obj
+    if isinstance(obj, dict):
+        out = {}
+        for key, val in obj.items():
+            out[key] = _redact_nested(val, redactor, findings)
+        return out
+    if isinstance(obj, list):
+        return [_redact_nested(item, redactor, findings) for item in obj]
+    return obj
+
+
 def _handle_pre_tool_use(
     payload: dict, redactor: Redactor, mode: str, log_path: Path
 ) -> int:
@@ -126,22 +144,8 @@ def _handle_pre_tool_use(
         sys.stdout.write("{}")
         return 0
 
-    all_findings = []
-    updated_input = None
-
-    if isinstance(tool_input, str):
-        result = redactor.redact(tool_input)
-        all_findings = result.findings
-        if result.findings:
-            updated_input = result.text
-    elif isinstance(tool_input, dict):
-        updated_input = dict(tool_input)
-        for key, val in tool_input.items():
-            if isinstance(val, str):
-                result = redactor.redact(val)
-                if result.findings:
-                    all_findings.extend(result.findings)
-                    updated_input[key] = result.text
+    all_findings: list = []
+    updated_input = _redact_nested(tool_input, redactor, all_findings)
 
     _log_findings(all_findings, log_path, f"PreToolUse:{tool_name}")
 

@@ -33,7 +33,7 @@ custom validated patterns for PII (Polish, EU, US).
 | **Polish PII** | PESEL, NIP, REGON, IBAN PL, dowod osobisty | mod-11, mod-97 checksums |
 | **EU PII** | Email, phone (E.164 + PL), generic IBAN | mod-97 for IBAN |
 | **US PII** | SSN, credit cards | Luhn algorithm |
-| **Unknown secrets** | High-entropy strings (>=4.5 bits, >=32 chars) | configurable |
+| **Unknown secrets** | High-entropy strings (>=4.5 bits, >=32 chars) | _planned, not yet implemented_ |
 
 Checksum validation is the difference between useful detection and noise.
 A random 11-digit order number won't be flagged as a PESEL.
@@ -59,12 +59,16 @@ The installer will:
 ### Option 2: Claude Code plugin (if preflight-check is on PATH)
 
 ```bash
-# Requires preflight-check to be installed on PATH first
+# Requires the preflight-check CLI to be installed on PATH first
+# (run ./install.sh, or `pip install preflight-check-skill`)
 claude plugin marketplace add https://github.com/konraddzbik/preflight-check-skill
-claude plugin install preflight@preflight-check
+claude plugin install preflight-check@preflight-check
 ```
 
-This uses the Claude Code plugin system to auto-register hooks.
+This uses the Claude Code plugin system to auto-register the hooks. The plugin
+bundles the skill and the hook definitions; the redaction engine itself is the
+`preflight-check` CLI (`pip install preflight-check-skill` ships that CLI only —
+the skill and plugin manifest come from the marketplace/repo).
 
 Test it:
 
@@ -141,9 +145,9 @@ Or natural language triggers:
                    v
 ┌─────────────────────────────────────────────────────────┐
 │ SKILL LAYER (manual invocation)                         │
-│   skill/SKILL.md                                        │
-│   skill/scripts/redact_file.py                          │
-│   skill/scripts/redact_clipboard.py                     │
+│   skills/preflight-check/SKILL.md                       │
+│   skills/preflight-check/scripts/redact_file.py         │
+│   skills/preflight-check/scripts/redact_clipboard.py    │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -201,6 +205,14 @@ only block them or add warnings. Tool inputs (Bash commands, file writes)
 *can* be redacted in place. Use `strict` mode if you need prompts with
 secrets to be blocked entirely.
 
+**On in-place tool-input redaction (`default` mode):** the `PreToolUse` hook
+rewrites detected secrets in tool input before execution. This is deliberate for
+egress-style tools (a secret about to be sent out), but for `Write`/`Edit` it
+means a placeholder can land in a file you actually intended to write, and for
+`Bash` a rewritten command may fail. If that trade-off doesn't fit your workflow,
+use `warn-only` mode (no modification) or `strict` mode (block criticals).
+Making the matcher tool-scoped is tracked as a follow-up.
+
 **Always combine with:**
 - `.claudeignore` for files that should never be read
 - `gitleaks` / `trufflehog` as pre-commit hooks
@@ -233,7 +245,7 @@ cd preflight-check-skill
 **Lub przez plugin Claude Code:**
 ```bash
 claude plugin marketplace add https://github.com/konraddzbik/preflight-check-skill
-claude plugin install preflight@preflight-check
+claude plugin install preflight-check@preflight-check
 ```
 
 Konfiguracja w `core/catalog.yaml`. Mozna dodac wlasne wzorce bez zmiany kodu.

@@ -21,8 +21,11 @@ class PlaceholderRegistry:
 
     Placeholders look like: [REDACTED_PESEL_001], [REDACTED_AWS_ACCESS_KEY_002]
 
-    Can optionally persist to disk so placeholders remain stable across
-    multiple invocations within the same session.
+    Within a single process the mapping keeps the same value on the same
+    placeholder. Pass a ``state_path`` to persist the mapping to disk so
+    placeholders also stay stable across separate invocations; without one the
+    registry is in-memory only and counters reset each process (this is how the
+    hook currently constructs it).
     """
 
     def __init__(self, state_path: Path | None = None) -> None:

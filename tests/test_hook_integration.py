@@ -205,3 +205,59 @@ class TestErrorHandling:
             mode="default",
         )
         assert "import error" not in err, f"Hook failed to import: {err}"
+
+
+# --- Nested dict handling ---
+
+
+class TestNestedDictRedaction:
+    def test_nested_env_dict(self) -> None:
+        """Secrets inside nested dicts (e.g. env vars) must be redacted."""
+        code, out, err = _run_hook(
+            {
+                "hook_event_name": "PreToolUse",
+                "tool_name": "Bash",
+                "tool_input": {
+                    "command": "deploy",
+                    "env": {"AWS_KEY": "AKIAIOSFODNN7EXAMPLE"},
+                },
+            },
+            mode="default",
+        )
+        assert code == 0
+        hso = json.loads(out)["hookSpecificOutput"]
+        assert hso["permissionDecision"] == "allow"
+        assert "AKIAIOSFODNN7EXAMPLE" not in json.dumps(hso["updatedInput"])
+        assert "[REDACTED_AWS_ACCESS_KEY_" in hso["updatedInput"]["env"]["AWS_KEY"]
+
+    def test_list_values_redacted(self) -> None:
+        """Secrets inside lists must be redacted."""
+        code, out, err = _run_hook(
+            {
+                "hook_event_name": "PreToolUse",
+                "tool_name": "Custom",
+                "tool_input": {
+                    "args": ["safe", "AKIAIOSFODNN7EXAMPLE"],
+                },
+            },
+            mode="default",
+        )
+        assert code == 0
+        hso = json.loads(out)["hookSpecificOutput"]
+        assert "AKIAIOSFODNN7EXAMPLE" not in json.dumps(hso["updatedInput"])
+
+    def test_no_findings_in_nested_passthrough(self) -> None:
+        """Clean nested input should pass through without modification."""
+        code, out, err = _run_hook(
+            {
+                "hook_event_name": "PreToolUse",
+                "tool_name": "Bash",
+                "tool_input": {
+                    "command": "echo hello",
+                    "env": {"PATH": "/usr/bin"},
+                },
+            },
+            mode="default",
+        )
+        assert code == 0
+        assert json.loads(out) == {}

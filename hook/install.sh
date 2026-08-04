@@ -37,13 +37,13 @@ if [ -f "$SETTINGS_FILE" ]; then
 fi
 
 # 4. Register hooks in settings.json (idempotent, uses absolute CLI path)
-python3 << PYEOF
+PREFLIGHT_SETTINGS_FILE="$SETTINGS_FILE" PREFLIGHT_CLI_PATH="$CLI_PATH" python3 << 'PYEOF'
 import json
 import os
 import sys
 
-settings_file = "$SETTINGS_FILE"
-hook_cmd = "$CLI_PATH hook"
+settings_file = os.environ["PREFLIGHT_SETTINGS_FILE"]
+hook_cmd = os.environ["PREFLIGHT_CLI_PATH"] + " hook"
 
 try:
     if os.path.exists(settings_file):

@@ -110,15 +110,14 @@ class TestLuhn:
     @pytest.mark.parametrize("value", [
         "4111111111111111",
         "4111 1111 1111 1111",
-        "79927398713",         # 11-digit Luhn test but under min length
         "4111111111111111",    # classic test number
         "5500000000000004",    # MC test
     ])
     def test_valid(self, value: str) -> None:
-        from core.detectors.validators import _digits_only
-        digits = _digits_only(value)
-        if 13 <= len(digits) <= 19:
-            assert validate_luhn(value) is True
+        assert validate_luhn(value) is True
+
+    def test_valid_checksum_but_too_short_rejected(self) -> None:
+        assert validate_luhn("79927398713") is False
 
     @pytest.mark.parametrize("value,reason", [
         ("4111111111111112", "off-by-one"),

@@ -96,3 +96,23 @@ class TestFindingsConversion:
         raw = [{"RuleID": "test", "Match": "NOT_IN_TEXT"}]
         findings = gitleaks_findings_to_candidates("other text", raw, lambda c, v: "[X]")
         assert len(findings) == 0
+
+    def test_duplicate_matches_get_distinct_offsets(self) -> None:
+        """Same secret appearing twice must produce two findings at different positions."""
+        secret = "AKIAIOSFODNN7EXAMPLE"
+        text = f"first {secret} then {secret} end"
+        raw = [
+            {"RuleID": "aws-access-key", "Match": secret},
+            {"RuleID": "aws-access-key", "Match": secret},
+        ]
+
+        counter = {"n": 0}
+        def mock_placeholder(cat: str, val: str) -> str:
+            counter["n"] += 1
+            return f"[REDACTED_{cat}_{counter['n']:03d}]"
+
+        findings = gitleaks_findings_to_candidates(text, raw, mock_placeholder)
+        assert len(findings) == 2
+        assert findings[0].start != findings[1].start
+        assert findings[0].start == 6
+        assert findings[1].start == 32

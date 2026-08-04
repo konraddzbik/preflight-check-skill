@@ -17,7 +17,9 @@ Usage:
 from __future__ import annotations
 
 import re
+import sys
 from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeoutError
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -74,6 +76,7 @@ class Redactor:
         self.catalog = catalog
         self.registry = registry or PlaceholderRegistry()
         self._compiled = self._compile_patterns()
+        self._pool = ThreadPoolExecutor(max_workers=2)
 
     @classmethod
     def from_default_catalog(
@@ -101,8 +104,9 @@ class Redactor:
                 try:
                     regex = re.compile(entry["pattern"])
                 except re.error as e:
-                    # Bad pattern in catalog — skip rather than crash everything
-                    print(f"[redactor] Bad pattern {entry['id']}: {e}")
+                    # Bad pattern in catalog — skip rather than crash everything.
+                    # Must go to stderr: in hook mode stdout is the JSON protocol channel.
+                    print(f"[redactor] Bad pattern {entry['id']}: {e}", file=sys.stderr)
                     continue
                 validator_name = entry.get("validator")
                 validator = VALIDATORS.get(validator_name) if validator_name else None
@@ -122,11 +126,15 @@ class Redactor:
         if not text:
             return RedactionResult(text=text or "")
 
-        with ThreadPoolExecutor(max_workers=2) as pool:
-            regex_future = pool.submit(self._run_regex_detection, text)
-            gitleaks_future = pool.submit(self._run_gitleaks_detection, text)
-            candidates = regex_future.result()
+        regex_future = self._pool.submit(self._run_regex_detection, text)
+        gitleaks_future = self._pool.submit(self._run_gitleaks_detection, text)
+        candidates = regex_future.result()
+        try:
             candidates.extend(gitleaks_future.result(timeout=10))
+        except FuturesTimeoutError:
+            # gitleaks hung — proceed with regex/validated findings only rather
+            # than letting the timeout propagate and abort the whole redaction.
+            pass
 
         chosen = self._resolve_overlaps(candidates)
         chosen_sorted = sorted(chosen, key=lambda f: f.start, reverse=True)

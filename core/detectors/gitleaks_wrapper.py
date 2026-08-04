@@ -12,6 +12,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 
 _RULES_PATH = Path(__file__).parent.parent / "gitleaks.toml"
@@ -100,7 +101,7 @@ def run_gitleaks(
 def gitleaks_findings_to_candidates(
     text: str,
     raw_findings: list[dict],
-    get_placeholder: callable,
+    get_placeholder: Callable[[str, str], str],
 ) -> list:
     """Convert raw gitleaks findings to Finding-compatible tuples.
 
@@ -110,6 +111,7 @@ def gitleaks_findings_to_candidates(
     from core.redactor import Finding
 
     candidates = []
+    search_start = 0
     for item in raw_findings:
         match_text = item.get("Match", item.get("match", ""))
         rule_id = item.get("RuleID", item.get("ruleID", "GITLEAKS"))
@@ -117,9 +119,11 @@ def gitleaks_findings_to_candidates(
         if not match_text:
             continue
 
-        start = text.find(match_text)
+        start = text.find(match_text, search_start)
         if start == -1:
-            continue
+            start = text.find(match_text)
+            if start == -1:
+                continue
 
         placeholder = get_placeholder(rule_id.upper(), match_text)
         candidates.append(
@@ -133,5 +137,6 @@ def gitleaks_findings_to_candidates(
                 placeholder=placeholder,
             )
         )
+        search_start = start + len(match_text)
 
     return candidates
