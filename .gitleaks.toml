@@ -6,4 +6,5 @@ title = "preflight-check-skill gitleaks config"
 paths = [
     '''tests/fixtures/.*''',
     '''skills/preflight-check/examples/.*''',
+    '''docs/.*''',
 ]
