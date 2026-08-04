@@ -7,6 +7,15 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![CI](https://github.com/konraddzbik/preflight-check-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/konraddzbik/preflight-check-skill/actions)
 
+**Usage in a nutshell:** run `./install.sh` once. From then on the hooks run
+automatically — every prompt and tool call is scanned, and secrets/PII are
+redacted or blocked *before they leave your machine*. To scrub text by hand
+before publishing, invoke the skill (`/preflight-check`) or pipe through the CLI:
+
+```bash
+pbpaste | preflight-check scan | pbcopy      # clean whatever's on your clipboard
+```
+
 ---
 
 ## What this does
@@ -22,6 +31,23 @@ Two layers, one detection engine:
 
 Both layers share the same detection core: gitleaks for cloud secrets +
 custom validated patterns for PII (Polish, EU, US).
+
+---
+
+## How it works
+
+One detection core, three entry points. A prompt or tool call hits the **hook**;
+text you want to publish goes through the **skill/CLI** — both call the same
+**detection core** (validated regex + gitleaks in parallel), map findings to
+stable `[REDACTED_X_NNN]` placeholders, and log offsets only (never the values).
+The **mode** decides the final action: redact, block, or warn.
+
+![preflight-check architecture: prompt-scan, tool-input redaction, and manual-cleanup flows through one detection core](docs/architecture.png)
+
+> The diagram is **interactive** — open [`docs/architecture.html`](docs/architecture.html)
+> in a browser to click through each flow step by step and toggle the
+> default / strict / warn-only modes. Full walkthrough in
+> [`docs/architecture.md`](docs/architecture.md).
 
 ---
 
@@ -119,6 +145,8 @@ Or natural language triggers:
 ---
 
 ## Architecture
+
+Text version of the [interactive diagram](docs/architecture.html) above:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
