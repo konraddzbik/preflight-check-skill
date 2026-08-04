@@ -3,8 +3,8 @@ Command-line interface for preflight-check-skill.
 
 Usage:
     echo "secret stuff" | preflight-check
-    preflight-check --file path/to/file.txt
-    preflight-check --json
+    preflight-check scan --file path/to/file.txt
+    preflight-check scan --json
     preflight-check status
 """
 

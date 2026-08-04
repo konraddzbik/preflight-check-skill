@@ -114,7 +114,7 @@ polish_pii:
 
   - id: DOWOD_OSOBISTY
     description: Polish ID card number (3 letters + 6 digits)
-    pattern: '\b[A-Z]{3}\d{6}\b'
+    pattern: '(?i)\b[A-Z]{3}\d{6}\b'
     severity: high
     enabled: true
 
@@ -160,10 +160,11 @@ us_pii:
     severity: critical
     enabled: true
 
-# Entropy-based fallback for unknown-format secrets
-# Conservative threshold to minimize false positives on base64 blobs / hashes
+# Entropy-based fallback for unknown-format secrets (NOT YET IMPLEMENTED)
+# Kept here as a config template for the planned entropy detector.
+# See: https://github.com/konraddzbik/preflight-check-skill/issues
 entropy:
-  enabled: true
+  enabled: false
   min_length: 32
   min_entropy: 4.5     # Shannon entropy threshold
   exclude_in_code_comments: true

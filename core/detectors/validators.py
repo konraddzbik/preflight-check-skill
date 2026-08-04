@@ -16,6 +16,7 @@ References:
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 
 
 def _digits_only(value: str) -> str:
@@ -166,7 +167,7 @@ def validate_luhn(value: str) -> bool:
 
 # Registry mapping validator names (from catalog.yaml) to callables.
 # Keep this synchronized with catalog.yaml `validator:` fields.
-VALIDATORS: dict[str, callable] = {
+VALIDATORS: dict[str, Callable[[str], bool]] = {
     "validate_pesel": validate_pesel,
     "validate_nip": validate_nip,
     "validate_regon": validate_regon,
