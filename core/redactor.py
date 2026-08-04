@@ -18,8 +18,6 @@ from __future__ import annotations
 
 import re
 import sys
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import TimeoutError as FuturesTimeoutError
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -31,6 +29,10 @@ from core.detectors.validators import VALIDATORS
 from core.placeholders import PlaceholderRegistry
 
 SEVERITY_ORDER = {"critical": 4, "high": 3, "medium": 2, "low": 1}
+
+# Safety cap for the recursive tool-input walk (redact_nested). Real tool inputs
+# are shallow; this only guards against pathological/hostile nesting.
+_MAX_NEST_DEPTH = 50
 
 
 @dataclass(frozen=True)
@@ -76,7 +78,6 @@ class Redactor:
         self.catalog = catalog
         self.registry = registry or PlaceholderRegistry()
         self._compiled = self._compile_patterns()
-        self._pool = ThreadPoolExecutor(max_workers=2)
 
     @classmethod
     def from_default_catalog(
@@ -126,15 +127,12 @@ class Redactor:
         if not text:
             return RedactionResult(text=text or "")
 
-        regex_future = self._pool.submit(self._run_regex_detection, text)
-        gitleaks_future = self._pool.submit(self._run_gitleaks_detection, text)
-        candidates = regex_future.result()
-        try:
-            candidates.extend(gitleaks_future.result(timeout=10))
-        except FuturesTimeoutError:
-            # gitleaks hung — proceed with regex/validated findings only rather
-            # than letting the timeout propagate and abort the whole redaction.
-            pass
+        # Sequential by design: regex is microseconds; gitleaks is a subprocess
+        # with its own 5s timeout and is the whole critical path — parallelising
+        # them buys nothing and made placeholder numbering nondeterministic.
+        # Running regex first keeps [REDACTED_X_NNN] numbering stable run-to-run.
+        candidates = self._run_regex_detection(text)
+        candidates.extend(self._run_gitleaks_detection(text))
 
         chosen = self._resolve_overlaps(candidates)
         chosen_sorted = sorted(chosen, key=lambda f: f.start, reverse=True)
@@ -194,3 +192,30 @@ class Redactor:
             if not overlaps:
                 accepted.append(f)
         return sorted(accepted, key=lambda f: f.start)
+
+
+def redact_nested(
+    obj: Any, redactor: Redactor, findings: list[Finding], _depth: int = 0
+) -> Any:
+    """Recursively redact every string value in a str/dict/list structure.
+
+    Appends detected ``Finding`` objects to ``findings`` and returns a new
+    structure with secrets replaced. Shared by the PreToolUse hook and the CLI's
+    ``scan --json`` so both handle nested tool inputs (env maps, arg lists)
+    identically. Depth-bounded (see ``_MAX_NEST_DEPTH``): past the cap the value
+    is returned unchanged rather than risking unbounded recursion on hostile input.
+    """
+    if _depth > _MAX_NEST_DEPTH:
+        return obj
+    if isinstance(obj, str):
+        result = redactor.redact(obj)
+        findings.extend(result.findings)
+        return result.text if result.findings else obj
+    if isinstance(obj, dict):
+        return {
+            key: redact_nested(val, redactor, findings, _depth + 1)
+            for key, val in obj.items()
+        }
+    if isinstance(obj, list):
+        return [redact_nested(item, redactor, findings, _depth + 1) for item in obj]
+    return obj

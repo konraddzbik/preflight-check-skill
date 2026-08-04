@@ -16,7 +16,15 @@ import shutil
 import sys
 from pathlib import Path
 
-from core.redactor import Redactor
+from core.redactor import Redactor, redact_nested
+
+
+def _count_by_id(findings: list) -> dict[str, int]:
+    """Count findings by pattern_id for the stderr summary line."""
+    counts: dict[str, int] = {}
+    for f in findings:
+        counts[f.pattern_id] = counts.get(f.pattern_id, 0) + 1
+    return counts
 
 
 def _cmd_scan(args: argparse.Namespace) -> int:
@@ -38,14 +46,24 @@ def _cmd_scan(args: argparse.Namespace) -> int:
     if args.json:
         try:
             payload = json.loads(text)
-            for key in ("prompt", "tool_input"):
-                if key in payload and isinstance(payload[key], str):
-                    result = redactor.redact(payload[key])
-                    payload[key] = result.text
-            sys.stdout.write(json.dumps(payload))
         except json.JSONDecodeError:
             print("Error: invalid JSON input", file=sys.stderr)
             return 1
+        # Recurse into prompt/tool_input so nested tool inputs (dicts/lists) are
+        # redacted the same way the PreToolUse hook does — not just top-level strings.
+        findings: list = []
+        for key in ("prompt", "tool_input"):
+            if key in payload:
+                payload[key] = redact_nested(payload[key], redactor, findings)
+        sys.stdout.write(json.dumps(payload))
+        if findings:
+            summary = ", ".join(
+                f"{k}={v}"
+                for k, v in _count_by_id(findings).items()
+            )
+            sys.stderr.write(
+                f"[preflight-check] {len(findings)} finding(s): {summary}\n"
+            )
     else:
         result = redactor.redact(text)
         sys.stdout.write(result.text)

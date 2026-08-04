@@ -16,8 +16,8 @@ version: 1
 
 cloud_keys:
   - id: AWS_ACCESS_KEY
-    description: AWS Access Key ID
-    pattern: '\bAKIA[0-9A-Z]{16}\b'
+    description: AWS Access Key ID (incl. ASIA temp/STS, AROA/AIDA/AGPA/... unique IDs)
+    pattern: '\b(?:AKIA|ASIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA)[0-9A-Z]{16}\b'
     severity: critical
     enabled: true
 
@@ -47,8 +47,8 @@ cloud_keys:
     enabled: true
 
   - id: OPENAI_KEY
-    description: OpenAI API key
-    pattern: '\bsk-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20}\b|\bsk-proj-[a-zA-Z0-9_\-]{40,}\b'
+    description: OpenAI API key (classic, project, service-account)
+    pattern: '\bsk-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20}\b|\bsk-(?:proj|svcacct)-[a-zA-Z0-9_\-]{40,}\b'
     severity: critical
     enabled: true
 
@@ -59,14 +59,14 @@ cloud_keys:
     enabled: true
 
   - id: GITHUB_TOKEN
-    description: GitHub personal access token
-    pattern: '\bgh[pousr]_[A-Za-z0-9]{36,}\b'
+    description: GitHub token (classic PAT, OAuth, app, and fine-grained github_pat_)
+    pattern: '\bgh[pousr]_[A-Za-z0-9]{36,}\b|\bgithub_pat_[A-Za-z0-9_]{22,}\b'
     severity: critical
     enabled: true
 
   - id: SLACK_TOKEN
-    description: Slack token
-    pattern: '\bxox[abprs]-[A-Za-z0-9-]{10,}\b'
+    description: Slack token (bot/user/app-level xapp)
+    pattern: '\b(?:xox[abprs]|xapp)-[A-Za-z0-9-]{10,}\b'
     severity: high
     enabled: true
 
@@ -107,21 +107,27 @@ polish_pii:
 
   - id: IBAN_PL
     description: Polish IBAN (PL + 26 digits, mod-97 validated)
-    pattern: '\bPL\d{2}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}\b'
+    pattern: '(?i)\bPL\d{2}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}\b'
     validator: validate_iban
     severity: critical
     enabled: true
 
   - id: DOWOD_OSOBISTY
     description: Polish ID card number (3 letters + 6 digits)
-    pattern: '(?i)\b[A-Z]{3}\d{6}\b'
+    # Uppercase-only on purpose: (?i) matched ordinary SKUs / part codes (abc123456)
+    # and there is no checksum to gate it, so case-insensitivity was pure false-positive.
+    pattern: '\b[A-Z]{3}\d{6}\b'
     severity: high
     enabled: true
 
 eu_pii:
   - id: EMAIL
     description: Email address
-    pattern: '\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b'
+    # Bounded quantifiers (RFC 5321 limits: local <=64, label <=63) keep this
+    # linear-time: the old unbounded '+' rescanned the whole tail from every
+    # start position => O(n^2) ReDoS. Domain labels carry no dots (dots only via
+    # the (?:\.label){0,10} group), removing the class/\. ambiguity too.
+    pattern: '\b[A-Za-z0-9._%+\-]{1,64}@[A-Za-z0-9\-]{1,63}(?:\.[A-Za-z0-9\-]{1,63}){0,10}\.[A-Za-z]{2,24}\b'
     severity: medium
     enabled: true
 
@@ -141,7 +147,7 @@ eu_pii:
 
   - id: IBAN_GENERIC
     description: Generic IBAN (any country, mod-97 validated)
-    pattern: '\b[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}\b'
+    pattern: '(?i)\b[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}[A-Z0-9]{0,16}\b'
     validator: validate_iban
     severity: high
     enabled: true

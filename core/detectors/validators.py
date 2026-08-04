@@ -20,8 +20,13 @@ from collections.abc import Callable
 
 
 def _digits_only(value: str) -> str:
-    """Strip non-digits from a string."""
-    return re.sub(r"\D", "", value)
+    """Keep only ASCII digits 0-9.
+
+    Uses an explicit ``[^0-9]`` class rather than ``\\D`` so that Unicode digits
+    (Arabic-Indic ٠-٩, etc.), which ``int()`` would otherwise happily accept, are
+    stripped out and cannot pass a checksum as a false positive.
+    """
+    return re.sub(r"[^0-9]", "", value)
 
 
 def validate_pesel(value: str) -> bool:
@@ -90,6 +95,8 @@ def validate_regon(value: str) -> bool:
     If checksum result is 10, the digit is 0.
     """
     digits = _digits_only(value)
+    if set(digits) == {"0"}:
+        return False
 
     if len(digits) == 9:
         weights = [8, 9, 2, 3, 4, 5, 6, 7]

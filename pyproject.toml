@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "preflight-check-skill"
-version = "1.1.0"
+version = "1.2.0"
 description = "Defensive toolkit to prevent secrets and PII from leaking into Claude Code conversations"
 readme = "README.md"
 requires-python = ">=3.10"

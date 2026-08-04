@@ -31,11 +31,12 @@ if [ -z "$PREFLIGHT_BIN" ]; then
     done
 fi
 
-# 3. Try to find via plugin root (for development/testing)
+# 3. Try a venv inside the plugin root.
+# With marketplace.json `source: "./"`, CLAUDE_PLUGIN_ROOT *is* the repo root,
+# so core/ lives directly under it (not two levels up).
 if [ -z "$PREFLIGHT_BIN" ] && [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
-    # Look in the original repo location relative to plugin
-    ORIGINAL_REPO="$(cd "$CLAUDE_PLUGIN_ROOT/../.." && pwd 2>/dev/null)"
-    for venv in "$ORIGINAL_REPO/venv/bin/preflight-check" "$ORIGINAL_REPO/.venv/bin/preflight-check"; do
+    REPO_ROOT="$CLAUDE_PLUGIN_ROOT"
+    for venv in "$REPO_ROOT/venv/bin/preflight-check" "$REPO_ROOT/.venv/bin/preflight-check"; do
         if [ -x "$venv" ]; then
             PREFLIGHT_BIN="$venv"
             break
@@ -43,17 +44,16 @@ if [ -z "$PREFLIGHT_BIN" ] && [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
     done
 fi
 
-# 4. Try to use Python directly with the module (if we can find the repo)
+# 4. Fall back to running the module directly from the plugin root.
 if [ -z "$PREFLIGHT_BIN" ] && [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
-    ORIGINAL_REPO="$(cd "$CLAUDE_PLUGIN_ROOT/../.." && pwd 2>/dev/null)"
-    if [ -f "$ORIGINAL_REPO/core/hook_handler.py" ]; then
-        # Use Python from the original repo
-        PYTHON_CMD="$ORIGINAL_REPO/venv/bin/python3"
+    REPO_ROOT="$CLAUDE_PLUGIN_ROOT"
+    if [ -f "$REPO_ROOT/core/hook_handler.py" ]; then
+        PYTHON_CMD="$REPO_ROOT/venv/bin/python3"
         if [ ! -x "$PYTHON_CMD" ]; then
             PYTHON_CMD="python3"
         fi
         if command -v "$PYTHON_CMD" &>/dev/null; then
-            export PYTHONPATH="$ORIGINAL_REPO:$PYTHONPATH"
+            export PYTHONPATH="$REPO_ROOT:$PYTHONPATH"
             exec "$PYTHON_CMD" -c "from core.hook_handler import main; import sys; sys.exit(main())"
         fi
     fi

@@ -4,6 +4,46 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-08-04
+
+Full code + architecture review pass — see [`docs/CODE_REVIEW.md`](docs/CODE_REVIEW.md).
+
+### Fixed
+
+- **EMAIL ReDoS (blocker):** the email pattern was O(n²) and could hang the hook
+  on a pasted document with a long dotted run. Rewritten with RFC-bounded
+  quantifiers → linear time (156 KB now scans in ~75 ms; valid/subdomain emails
+  still match).
+- **gitleaks occurrence-mismatch leak (blocker):** a flagged secret is now
+  redacted at **every** occurrence (was: only the first literal match, so a real
+  secret could survive if a benign copy appeared earlier). Prefers the `Secret`
+  field over context-laden `Match`.
+- **Plugin `hook-wrapper.sh` path bug:** the `core/` fallback discovery looked two
+  directories above the plugin root and could never fire; now uses
+  `$CLAUDE_PLUGIN_ROOT` directly.
+- **`scan --json` no-op:** it only redacted top-level strings, so a dict
+  `tool_input` (the real hook shape) passed through un-redacted. Now shares the
+  hook's recursive `redact_nested`.
+- **DOWOD_OSOBISTY false positives:** dropped `(?i)` — it matched ordinary
+  lowercase SKUs/part codes and has no checksum to gate it.
+- REGON now rejects all-zeros; checksum inputs are stripped to ASCII digits only
+  (Unicode digits no longer sneak through `int()`).
+
+### Added / changed
+
+- **Expanded cloud-key coverage:** AWS `ASIA` (STS temp creds) + `AROA/AIDA/…`,
+  GitHub fine-grained `github_pat_`, Slack app-level `xapp-`, OpenAI
+  `sk-svcacct-`, and **lowercase IBANs**.
+- **Detection is now sequential** (regex → gitleaks) instead of a 2-thread pool:
+  the parallelism bought nothing (gitleaks subprocess dominates) and made
+  placeholder numbering nondeterministic. Numbering is now stable run-to-run.
+- `redact_nested` extracted to `core/redactor.py` (shared by hook + CLI) with a
+  depth cap against pathological nesting.
+- Version single-sourced to `1.2.0` across all four manifests, with a CI test
+  that fails on drift.
+- Test suite grew 109 → 136 (hook decision-logic now unit-tested; `hook_handler`
+  coverage 0% → 60%).
+
 ## [1.1.0] - 2026-08-04
 
 First public release.
